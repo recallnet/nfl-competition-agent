@@ -15,6 +15,7 @@ Create `.env` with the following variables (values shown are examples):
 ```
 AI_GATEWAY_API_KEY=sk-***
 AI_GATEWAY_BASE_URL=https://ai-gateway.vercel.sh/v1 # optional override
+AI_MODEL=openai/gpt-4o-mini # optional override
 
 RECALL_AGENT_API_KEY=your_recall_agent_api_key
 RECALL_BASE_URL=https://api.competitions.recall.network/api # http://localhost:3000/api for local development
