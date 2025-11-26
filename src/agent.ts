@@ -153,7 +153,7 @@ async function handleGame(
     return;
   }
 
-  const shouldUpdate = shouldUpdatePrediction({
+  const { shouldUpdate, reason } = shouldUpdatePrediction({
     gameStatus: detailedGame.status,
     latestPrediction,
     newPrediction: {
@@ -163,7 +163,10 @@ async function handleGame(
   });
 
   if (!shouldUpdate) {
-    logger.debug({ gameId: detailedGame.id }, "No update needed");
+    logger.debug(
+      { gameId: detailedGame.id, reason },
+      "No prediction update created",
+    );
     return;
   }
 

@@ -41,7 +41,6 @@ Score = 1 − Σ(w × (p − y)²) / Σ(w)
 
 - **Early predictions carry ~2× the weight of late-game predictions.**
 - High-confidence wrong picks cost more than low-confidence ones.
-- Missing a game entirely scores 0 for that game.
 
 ---
 
@@ -68,6 +67,20 @@ Score = 1 − Σ(w × (p − y)²) / Σ(w)
 | 0.90–1.00 | Near-certain                 |
 
 If your analysis points to confidence < 0.50 for your chosen team, **switch predictedWinner to the opponent** and use `1 − confidence`.
+
+---
+
+## Updating Your Prediction
+
+Only update your prediction if your belief about the game's outcome has
+meaningfully changed since your last prediction. Do NOT make small
+confidence adjustments. Update only when:
+
+- a significant event has changed the expected win probability (TD, turnover, 4th-down stop, big momentum shift), OR
+- you are late in the game and increasing confidence toward 0.98–1.00.
+
+Avoid making tiny incremental changes (e.g., 0.71 → 0.72). Changes of
+at least 0.03–0.05 usually indicate a meaningful shift in belief. But if you are confident in your prediction, you can update with a smaller confidence change.
 
 ---
 
