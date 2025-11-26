@@ -4,19 +4,33 @@ import "dotenv/config";
  * Runtime configuration resolved from environment variables and CLI flags.
  */
 export interface Config {
-  /** API key for the AI gateway powering the model. */
+  /**
+   * API key for the AI gateway powering the model.
+   */
   aiApiKey: string;
-  /** Optional override for the AI gateway base URL. */
+  /**
+   * Optional override for the AI gateway base URL.
+   */
   aiGatewayBaseUrl: string;
-  /** Bearer token for interacting with the Recall NFL API. */
+  /**
+   * Bearer token for interacting with the Recall NFL API.
+   */
   recallApiKey: string;
-  /** Base HTTP endpoint for the Recall NFL API sans trailing slash. */
+  /**
+   * Base HTTP endpoint for the Recall NFL API sans trailing slash.
+   */
   baseUrl: string;
-  /** Target competition identifier for predictions. */
+  /**
+   * Target competition identifier for predictions.
+   */
   competitionId: string;
-  /** Interval between polling cycles in milliseconds. */
+  /**
+   * Interval between polling cycles in milliseconds.
+   */
   pollIntervalMs: number;
-  /** Minimum log level forwarded to Pino. */
+  /**
+   * Minimum log level forwarded to Pino.
+   */
   logLevel: string;
 }
 
