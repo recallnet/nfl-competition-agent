@@ -75,7 +75,7 @@ export async function getGamePlays(
     sort?: "-createdAt" | "createdAt";
     latest?: boolean;
   } = {},
-): Promise<Play[]> {
+): Promise<PlaysResponse["data"]> {
   const params = new URLSearchParams();
   if (options.limit) params.set("limit", String(options.limit));
   if (options.offset) params.set("offset", String(options.offset));
@@ -86,7 +86,7 @@ export async function getGamePlays(
     ? `/nfl/competitions/${competitionId}/games/${gameId}/plays?${query}`
     : `/nfl/competitions/${competitionId}/games/${gameId}/plays`;
   const response = await getJson<PlaysResponse>(path);
-  return response.data.plays;
+  return response.data;
 }
 
 /**

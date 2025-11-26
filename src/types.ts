@@ -37,6 +37,8 @@ export interface Game {
   awayTeam: string;
   spread?: number;
   overUnder?: number;
+  homeTeamMoneyLine?: number | null;
+  awayTeamMoneyLine?: number | null;
   venue?: string;
   status: GameStatus;
   winner?: string;
@@ -69,23 +71,40 @@ export interface Play {
   id: string;
   sequence: number;
   quarterName: string;
-  timeRemainingMinutes: number;
-  timeRemainingSeconds: number;
-  down: number;
-  distance: number;
-  yardLine: number;
-  yardLineTerritory: string;
-  yardsToEndZone: number;
+  timeRemainingMinutes: number | null;
+  timeRemainingSeconds: number | null;
+  down: number | null;
+  distance: number | null;
+  yardLine: number | null;
+  yardLineTerritory: string | null;
+  yardsToEndZone: number | null;
   team: string;
   opponent: string;
-  description: string;
-  playType: string;
+  description: string | null;
+  playType: string | null;
+  homeScore?: number | null;
+  awayScore?: number | null;
+}
+
+/** Snapshot of the scoreboard/drive situation returned with play data. */
+export interface GameStateSnapshot {
+  homeScore: number | null;
+  awayScore: number | null;
+  quarterName: string | null;
+  timeRemainingMinutes: number | null;
+  timeRemainingSeconds: number | null;
+  down: number | null;
+  distance: number | null;
+  yardLine: number | null;
+  yardLineTerritory: string | null;
 }
 
 /** Paginated list of plays for a given game. */
 export interface PlaysResponse {
   data: {
+    metadata: GameStateSnapshot | null;
     plays: Play[];
+    play?: Play | null;
     pagination: {
       total: number;
       limit: number;

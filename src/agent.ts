@@ -68,16 +68,17 @@ async function buildPrediction(
   game: Game,
   latestPrediction?: Prediction,
 ): Promise<{ predictedWinner: string; confidence: number; reason: string }> {
-  const plays =
+  const playsData =
     game.status === "in_progress"
       ? await getGamePlays(config.competitionId, game.id, {
           limit: 20,
           sort: "-createdAt",
         }).catch((error) => {
           console.warn(`Unable to load plays for ${game.id}:`, error);
-          return [];
+          return undefined;
         })
-      : [];
+      : undefined;
+  const plays = playsData?.plays ?? [];
 
   return callPredictionModel({
     rules,
