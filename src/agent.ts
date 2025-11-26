@@ -18,9 +18,9 @@ import {
 import { Competition, CompetitionRules, Game, Prediction } from "./types.js";
 
 /**
- * Interval between polling cycles in milliseconds.
+ * Interval between polling cycles in milliseconds (from config).
  */
-const POLL_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
+const POLL_INTERVAL_MS = config.pollIntervalMs;
 
 /**
  * Identifier provided when scoping predictions to this agent.

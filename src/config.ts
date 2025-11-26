@@ -14,6 +14,8 @@ export interface Config {
   baseUrl: string;
   /** Target competition identifier for predictions. */
   competitionId: string;
+  /** Interval between polling cycles in milliseconds. */
+  pollIntervalMs: number;
   /** Minimum log level forwarded to Pino. */
   logLevel: string;
 }
@@ -75,6 +77,18 @@ function loadConfig(): Config {
 
   const logLevel = process.env.LOG_LEVEL?.toLowerCase() || "info";
 
+  const DEFAULT_POLL_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
+  const cliPollInterval = getCliArg("--poll-interval");
+  const rawPollInterval = cliPollInterval || process.env.POLL_INTERVAL_MS;
+  const pollIntervalMs = rawPollInterval
+    ? parseInt(rawPollInterval, 10)
+    : DEFAULT_POLL_INTERVAL_MS;
+  if (Number.isNaN(pollIntervalMs) || pollIntervalMs <= 0) {
+    throw new Error(
+      "POLL_INTERVAL_MS must be a positive integer (milliseconds)",
+    );
+  }
+
   return {
     aiApiKey,
     aiGatewayBaseUrl,
@@ -82,6 +96,7 @@ function loadConfig(): Config {
     baseUrl,
     competitionId,
     logLevel,
+    pollIntervalMs,
   };
 }
 
