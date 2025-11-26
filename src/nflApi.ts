@@ -1,14 +1,16 @@
 import { getJson, postJson } from "./httpClient.js";
 import {
+  CompetitionRules,
   CompetitionRulesResponse,
   CreatePredictionRequest,
+  CreatePredictionResponse,
   Game,
   GameInfoResponse,
   GamesResponse,
-  Play,
+  GetPredictionsResponse,
+  Plays,
   PlaysResponse,
   Prediction,
-  PredictionsResponse,
 } from "./types.js";
 
 /**
@@ -18,12 +20,11 @@ import {
  */
 export async function getCompetitionRules(
   competitionId: string,
-): Promise<CompetitionRulesResponse> {
-  const response = await getJson<{
-    success: boolean;
-    data: CompetitionRulesResponse;
-  }>(`/nfl/competitions/${competitionId}/rules`);
-  if (!response?.data) {
+): Promise<CompetitionRules> {
+  const response = await getJson<CompetitionRulesResponse>(
+    `/nfl/competitions/${competitionId}/rules`,
+  );
+  if (!response?.success) {
     throw new Error("Competition rules payload missing expected data object");
   }
   return response.data;
@@ -40,6 +41,9 @@ export async function getCompetitionGames(
   const response = await getJson<GamesResponse>(
     `/nfl/competitions/${competitionId}/games`,
   );
+  if (!response?.success) {
+    throw new Error("Games payload missing expected data object");
+  }
   return response.data.games;
 }
 
@@ -56,6 +60,9 @@ export async function getGameInfo(
   const response = await getJson<GameInfoResponse>(
     `/nfl/competitions/${competitionId}/games/${gameId}`,
   );
+  if (!response?.success) {
+    throw new Error("Game info payload missing expected data object");
+  }
   return response.data.game;
 }
 
@@ -75,7 +82,7 @@ export async function getGamePlays(
     sort?: "-createdAt" | "createdAt";
     latest?: boolean;
   } = {},
-): Promise<PlaysResponse["data"]> {
+): Promise<Plays> {
   const params = new URLSearchParams();
   if (options.limit) params.set("limit", String(options.limit));
   if (options.offset) params.set("offset", String(options.offset));
@@ -86,6 +93,9 @@ export async function getGamePlays(
     ? `/nfl/competitions/${competitionId}/games/${gameId}/plays?${query}`
     : `/nfl/competitions/${competitionId}/games/${gameId}/plays`;
   const response = await getJson<PlaysResponse>(path);
+  if (!response?.success) {
+    throw new Error("Plays payload missing expected data object");
+  }
   return response.data;
 }
 
@@ -107,7 +117,10 @@ export async function getGamePredictions(
   const path = query
     ? `/nfl/competitions/${competitionId}/games/${gameId}/predictions?${query}`
     : `/nfl/competitions/${competitionId}/games/${gameId}/predictions`;
-  const response = await getJson<PredictionsResponse>(path);
+  const response = await getJson<GetPredictionsResponse>(path);
+  if (!response?.success) {
+    throw new Error("Predictions payload missing expected data object");
+  }
   return response.data.predictions;
 }
 
@@ -122,20 +135,13 @@ export async function postGamePrediction(
   competitionId: string,
   gameId: string,
   body: CreatePredictionRequest,
-): Promise<Prediction | undefined> {
-  const response = await postJson<unknown>(
+): Promise<Prediction> {
+  const response = await postJson<CreatePredictionResponse>(
     `/nfl/competitions/${competitionId}/games/${gameId}/predictions`,
     body,
   );
-  if (response && typeof response === "object") {
-    const responseObject = response as Record<string, unknown>;
-    const data = responseObject.data;
-    if (data && typeof data === "object" && "prediction" in data) {
-      return (data as { prediction: Prediction }).prediction;
-    }
-    if ("prediction" in responseObject && responseObject.prediction) {
-      return responseObject.prediction as Prediction;
-    }
+  if (!response?.success || !response.data) {
+    throw new Error("Prediction payload missing expected data object");
   }
-  return undefined;
+  return response.data;
 }

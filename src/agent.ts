@@ -13,7 +13,12 @@ import {
   getGamePredictions,
   postGamePrediction,
 } from "./nflApi.js";
-import { CompetitionRulesResponse, Game, Prediction } from "./types.js";
+import {
+  CompetitionRules,
+  CompetitionRulesResponse,
+  Game,
+  Prediction,
+} from "./types.js";
 
 /**
  * Interval between polling cycles in milliseconds.
@@ -64,7 +69,7 @@ async function fetchLatestPrediction(
  * @returns Structured AI output ready for submission.
  */
 async function buildPrediction(
-  rules: CompetitionRulesResponse,
+  rules: CompetitionRules,
   game: Game,
   latestPrediction?: Prediction,
 ): Promise<{ predictedWinner: string; confidence: number; reason: string }> {
@@ -101,7 +106,7 @@ async function buildPrediction(
  * @param baseGame - Game entry from the competition list route.
  */
 async function handleGame(
-  rules: CompetitionRulesResponse,
+  rules: CompetitionRules,
   baseGame: Game,
 ): Promise<void> {
   if (hasGameEnded(baseGame)) {
@@ -153,21 +158,28 @@ async function handleGame(
     return;
   }
 
+  const now = new Date().toISOString();
   try {
     const prediction = await postGamePrediction(
       config.competitionId,
       detailedGame.id,
       aiPrediction,
     );
+    const submittedAt = prediction?.createdAt ?? now;
     if (prediction?.id) {
       console.log(
-        `Submitted prediction ${prediction.id} for game ${detailedGame.id}`,
+        `Submitted prediction ${prediction.id} for game ${detailedGame.id} at ${submittedAt}`,
       );
     } else {
-      console.log(`Submitted prediction for game ${detailedGame.id}`);
+      console.log(
+        `Submitted prediction for game ${detailedGame.id} at ${submittedAt}`,
+      );
     }
   } catch (error) {
-    console.error(`Failed to submit prediction for ${detailedGame.id}:`, error);
+    console.error(
+      `Failed to submit prediction for ${detailedGame.id} at ${now}:`,
+      error,
+    );
   }
 }
 
@@ -176,10 +188,7 @@ async function handleGame(
  * @param rules - Competition rules metadata.
  * @param label - Tag used in log statements (e.g., "initial").
  */
-async function runCycle(
-  rules: CompetitionRulesResponse,
-  label: string,
-): Promise<void> {
+async function runCycle(rules: CompetitionRules, label: string): Promise<void> {
   let games: Game[] = [];
   try {
     games = await getCompetitionGames(config.competitionId);
@@ -202,7 +211,7 @@ async function runCycle(
  * Continuously repeats cycles with a fixed delay.
  * @param rules - Competition rules metadata.
  */
-async function pollLoop(rules: CompetitionRulesResponse): Promise<void> {
+async function pollLoop(rules: CompetitionRules): Promise<void> {
   while (true) {
     await runCycle(rules, "poll");
     await sleep(POLL_INTERVAL_MS);
@@ -214,7 +223,7 @@ async function main(): Promise<void> {
   console.log(
     `Starting NFL prediction agent for competition ${config.competitionId}`,
   );
-  let rules: CompetitionRulesResponse;
+  let rules: CompetitionRules;
   try {
     rules = await getCompetitionRules(config.competitionId);
   } catch (error) {

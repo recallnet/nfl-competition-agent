@@ -1,8 +1,7 @@
 /** All supported lifecycle states for an NFL game. */
 export type GameStatus = "scheduled" | "in_progress" | "final";
 
-/** Response payload describing a competition's scoring and submission rules. */
-export interface CompetitionRulesResponse {
+export interface CompetitionRules {
   predictionType: string;
   scoringMethod: string;
   scoringFormula: {
@@ -23,6 +22,12 @@ export interface CompetitionRulesResponse {
     scoringWindow: string;
     preGamePredictions: string;
   };
+}
+
+/** Response payload describing a competition's scoring and submission rules. */
+export interface CompetitionRulesResponse {
+  success: boolean;
+  data: CompetitionRules;
 }
 
 /** Minimal representation of a competition game. */
@@ -46,6 +51,7 @@ export interface Game {
 
 /** Wrapper returned by the list-games endpoint. */
 export interface GamesResponse {
+  success: boolean;
   data: {
     games: Game[];
   };
@@ -60,6 +66,7 @@ export interface LatestPrediction {
 
 /** Response payload containing detailed game info (and optionally predictions). */
 export interface GameInfoResponse {
+  success: boolean;
   data: {
     game: Game;
     latestPrediction?: LatestPrediction;
@@ -99,19 +106,23 @@ export interface GameStateSnapshot {
   yardLineTerritory: string | null;
 }
 
+export interface Pagination {
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+}
+
+export interface Plays {
+  metadata: GameStateSnapshot | null;
+  plays: Play[];
+  pagination: Pagination;
+}
+
 /** Paginated list of plays for a given game. */
 export interface PlaysResponse {
-  data: {
-    metadata: GameStateSnapshot | null;
-    plays: Play[];
-    play?: Play | null;
-    pagination: {
-      total: number;
-      limit: number;
-      offset: number;
-      hasMore: boolean;
-    };
-  };
+  success: boolean;
+  data: Plays;
 }
 
 /** A submitted model prediction. */
@@ -125,7 +136,8 @@ export interface Prediction {
 }
 
 /** Wrapper returned when listing predictions. */
-export interface PredictionsResponse {
+export interface GetPredictionsResponse {
+  success: boolean;
   data: {
     predictions: Prediction[];
   };
@@ -136,4 +148,10 @@ export interface CreatePredictionRequest {
   predictedWinner: string;
   confidence: number;
   reason: string;
+}
+
+export interface CreatePredictionResponse {
+  success: boolean;
+  message?: string;
+  data?: Prediction;
 }

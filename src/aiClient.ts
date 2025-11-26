@@ -4,7 +4,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { config } from "./config.js";
-import { CompetitionRulesResponse, Game, Play, Prediction } from "./types.js";
+import {
+  CompetitionRules,
+  CompetitionRulesResponse,
+  Game,
+  Play,
+  Prediction,
+} from "./types.js";
 
 /** Model identifier used for the AI SDK. */
 const modelName = process.env.AI_MODEL || "gpt-4o-mini";
@@ -27,7 +33,7 @@ export interface PredictionPayload {
 
 /** Context objects aggregated for prompt generation. */
 interface PromptContext {
-  rules: CompetitionRulesResponse;
+  rules: CompetitionRules;
   game: Game;
   plays?: Play[];
   previousPrediction?: Pick<
@@ -45,11 +51,11 @@ export function generateGamePredictionPrompt(context: PromptContext): string {
   const { rules, game, plays = [], previousPrediction } = context;
   const lines: string[] = [basePrompt];
   const formulaSummary = [
-    rules.scoringFormula?.description,
-    rules.scoringFormula?.timeNormalization,
-    rules.scoringFormula?.weight,
-    rules.scoringFormula?.probability,
-    rules.scoringFormula?.actual,
+    rules.scoringFormula.description,
+    rules.scoringFormula.timeNormalization,
+    rules.scoringFormula.weight,
+    rules.scoringFormula.probability,
+    rules.scoringFormula.actual,
   ]
     .filter(Boolean)
     .join(" | ");
