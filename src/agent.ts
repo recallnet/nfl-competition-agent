@@ -270,10 +270,14 @@ async function runCycle(
  */
 async function pollLoop(rules: CompetitionRules): Promise<void> {
   while (true) {
-    const result = await runCycle(rules, "poll");
-    if (result === "stop") {
-      logger.info("Competition completed, exiting poll loop");
-      break;
+    try {
+      const result = await runCycle(rules, "poll");
+      if (result === "stop") {
+        logger.info("Competition completed, exiting poll loop");
+        break;
+      }
+    } catch (error) {
+      logger.error({ error }, "Poll loop iteration failed");
     }
     await sleep(POLL_INTERVAL_MS);
   }
