@@ -27,7 +27,9 @@ const POLL_INTERVAL_MS = config.pollIntervalMs;
  */
 const AGENT_ID = process.env.AGENT_ID;
 
-/** Result of a single poll cycle indicating whether to continue and whether work was done. */
+/**
+ * Result of a single poll cycle indicating whether to continue and whether work was done.
+ */
 type CycleResult = "continue" | "stop";
 
 /**
@@ -263,7 +265,7 @@ async function runCycle(
 
 /**
  * Continuously repeats cycles with a fixed delay.
- * Exits gracefully when the competition reaches a terminal state (completed).
+ * Exits gracefully when the competition reaches a terminal state (ended).
  * @param rules - Competition rules metadata.
  */
 async function pollLoop(rules: CompetitionRules): Promise<void> {
@@ -277,7 +279,9 @@ async function pollLoop(rules: CompetitionRules): Promise<void> {
   }
 }
 
-/** Program entry point that initializes rules and begins polling. */
+/**
+ * Program entry point that initializes rules and begins polling.
+ */
 async function main(): Promise<void> {
   logger.info(
     { competitionId: config.competitionId },

@@ -7,26 +7,41 @@ import { config } from "./config.js";
 import { logger } from "./logger.js";
 import { CompetitionRules, Game, Play, Prediction } from "./types.js";
 
-/** Model identifier used for the AI SDK. */
+/**
+ * Model identifier used for the AI SDK.
+ */
 const modelName = process.env.AI_MODEL || "gpt-4o-mini";
-/** Absolute path to the shared system prompt. */
+
+/**
+ * Absolute path to the shared system prompt.
+ */
 const basePromptPath = join(process.cwd(), "prompts", "game_prediction.md");
-/** Static content prepended to every model prompt. */
+
+/**
+ * Static content prepended to every model prompt.
+ */
 const basePrompt = readFileSync(basePromptPath, "utf-8").trim();
-/** Thin wrapper around the AI SDK client. */
+
+/**
+ * Thin wrapper around the AI SDK client.
+ */
 const openai = createOpenAI({
   apiKey: config.aiApiKey,
   baseURL: config.aiGatewayBaseUrl,
 });
 
-/** Structured payload produced by the model. */
+/**
+ * Structured payload produced by the model.
+ */
 export interface PredictionPayload {
   predictedWinner: string;
   confidence: number;
   reason: string;
 }
 
-/** Context objects aggregated for prompt generation. */
+/**
+ * Context objects aggregated for prompt generation.
+ */
 interface PromptContext {
   rules: CompetitionRules;
   game: Game;

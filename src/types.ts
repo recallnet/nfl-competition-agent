@@ -1,10 +1,16 @@
-/** All supported lifecycle states for an NFL game. */
+/**
+ * All supported lifecycle states for an NFL game.
+ */
 export type GameStatus = "scheduled" | "in_progress" | "final";
 
-/** All supported lifecycle states for a competition. */
+/**
+ * All supported lifecycle states for a competition.
+ */
 export type CompetitionStatus = "pending" | "active" | "ended";
 
-/** Metadata about a competition returned by the info endpoint. */
+/**
+ * Metadata about a competition returned by the info endpoint.
+ */
 export interface Competition {
   id: string;
   name: string;
@@ -14,7 +20,9 @@ export interface Competition {
   endDate?: string | null;
 }
 
-/** Response payload for the competition info endpoint. */
+/**
+ * Response payload for the competition info endpoint.
+ */
 export interface CompetitionInfoResponse {
   success: boolean;
   competition: Competition;
@@ -43,13 +51,17 @@ export interface CompetitionRules {
   };
 }
 
-/** Response payload describing a competition's scoring and submission rules. */
+/**
+ * Response payload describing a competition's scoring and submission rules.
+ */
 export interface CompetitionRulesResponse {
   success: boolean;
   data: CompetitionRules;
 }
 
-/** Minimal representation of a competition game. */
+/**
+ * Minimal representation of a competition game.
+ */
 export interface Game {
   id: string;
   providerGameId: string;
@@ -68,7 +80,9 @@ export interface Game {
   winner?: string;
 }
 
-/** Wrapper returned by the list-games endpoint. */
+/**
+ * Wrapper returned by the list-games endpoint.
+ */
 export interface GamesResponse {
   success: boolean;
   data: {
@@ -76,14 +90,18 @@ export interface GamesResponse {
   };
 }
 
-/** Metadata describing the most recent prediction. */
+/**
+ * Metadata describing the most recent prediction.
+ */
 export interface LatestPrediction {
   predictedWinner: string;
   confidence: number;
   createdAt: string;
 }
 
-/** Response payload containing detailed game info (and optionally predictions). */
+/**
+ * Response payload containing detailed game info (and optionally predictions).
+ */
 export interface GameInfoResponse {
   success: boolean;
   data: {
@@ -92,7 +110,9 @@ export interface GameInfoResponse {
   };
 }
 
-/** Structured play-by-play item returned from the plays endpoint. */
+/**
+ * Structured play-by-play item returned from the plays endpoint.
+ */
 export interface Play {
   id: string;
   sequence: number;
@@ -112,7 +132,9 @@ export interface Play {
   awayScore?: number | null;
 }
 
-/** Snapshot of the scoreboard/drive situation returned with play data. */
+/**
+ * Snapshot of the scoreboard/drive situation returned with play data.
+ */
 export interface GameStateSnapshot {
   homeScore: number | null;
   awayScore: number | null;
@@ -139,13 +161,17 @@ export interface Plays {
   pagination: Pagination;
 }
 
-/** Paginated list of plays for a given game. */
+/**
+ * Paginated list of plays for a given game.
+ */
 export interface PlaysResponse {
   success: boolean;
   data: Plays;
 }
 
-/** A submitted model prediction. */
+/**
+ * A submitted model prediction.
+ */
 export interface Prediction {
   id: string;
   agentId: string;
@@ -155,7 +181,9 @@ export interface Prediction {
   reason?: string;
 }
 
-/** Wrapper returned when listing predictions. */
+/**
+ * Wrapper returned when listing predictions.
+ */
 export interface GetPredictionsResponse {
   success: boolean;
   data: {
@@ -163,7 +191,9 @@ export interface GetPredictionsResponse {
   };
 }
 
-/** Request payload used when submitting a prediction. */
+/**
+ * Request payload used when submitting a prediction.
+ */
 export interface CreatePredictionRequest {
   predictedWinner: string;
   confidence: number;

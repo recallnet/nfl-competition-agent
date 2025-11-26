@@ -1,9 +1,13 @@
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 
-/** Options supported by the shared HTTP helper. */
+/**
+ * Shape of the options supported by the shared HTTP helper.
+ */
 interface RequestOptions extends RequestInit {
-  /** Allows unauthenticated requests when true. */
+  /**
+   * Allows unauthenticated requests when true.
+   */
   skipAuth?: boolean;
 }
 

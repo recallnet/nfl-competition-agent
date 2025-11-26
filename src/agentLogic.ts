@@ -1,6 +1,8 @@
 import { Game, GameStatus, Prediction } from "./types.js";
 
-/** Shape of the data used when determining whether to submit a new prediction. */
+/**
+ * Shape of the data used when determining whether to submit a new prediction.
+ */
 interface ShouldUpdatePredictionParams {
   gameStatus: GameStatus;
   latestPrediction?: Prediction;

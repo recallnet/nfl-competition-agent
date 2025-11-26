@@ -16,6 +16,13 @@ import {
   Prediction,
 } from "./types.js";
 
+/**
+ * Validates that an API response indicates success, throwing if not.
+ * @param response - The API response to validate.
+ * @param errorMessage - Message to include in the thrown error.
+ * @returns The validated response.
+ * @throws Error when the response indicates failure.
+ */
 function ensureSuccess<T extends { success: boolean }>(
   response: T | undefined,
   errorMessage: string,
