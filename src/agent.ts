@@ -8,23 +8,27 @@ import { config } from "./config.js";
 import { logger } from "./logger.js";
 import {
   getCompetitionGames,
+  getCompetitionInfo,
   getCompetitionRules,
   getGameInfo,
   getGamePlays,
   getGamePredictions,
   postGamePrediction,
 } from "./nflApi.js";
-import { CompetitionRules, Game, Prediction } from "./types.js";
+import { Competition, CompetitionRules, Game, Prediction } from "./types.js";
 
 /**
  * Interval between polling cycles in milliseconds.
  */
-const POLL_INTERVAL_MS = 5 * 60 * 1000;
+const POLL_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes
 
 /**
  * Identifier provided when scoping predictions to this agent.
  */
-const AGENT_ID = process.env.AGENT_ID || "nfl-game-agent";
+const AGENT_ID = process.env.AGENT_ID;
+
+/** Result of a single poll cycle indicating whether to continue and whether work was done. */
+type CycleResult = "continue" | "stop";
 
 /**
  * Promise-based sleep helper used by the polling loop.
@@ -52,7 +56,10 @@ async function fetchLatestPrediction(
     );
     return predictions[0];
   } catch (error) {
-    logger.error({ error, gameId, competitionId }, "Failed to fetch latest prediction");
+    logger.error(
+      { error, gameId, competitionId },
+      "Failed to fetch latest prediction",
+    );
     return undefined;
   }
 }
@@ -75,7 +82,10 @@ async function buildPrediction(
           limit: 20,
           sort: "-createdAt",
         }).catch((error) => {
-          logger.warn({ error, gameId: game.id }, "Unable to load recent plays");
+          logger.warn(
+            { error, gameId: game.id },
+            "Unable to load recent plays",
+          );
           return undefined;
         })
       : undefined;
@@ -106,7 +116,7 @@ async function handleGame(
   baseGame: Game,
 ): Promise<void> {
   if (hasGameEnded(baseGame)) {
-    logger.info({ gameId: baseGame.id }, "Skipping final game");
+    logger.info({ gameId: baseGame.id }, "Skipping game with status 'final'");
     return;
   }
 
@@ -183,17 +193,61 @@ async function handleGame(
 }
 
 /**
+ * Returns true when the competition has ended and the agent should shut down.
+ * @param competition - Competition metadata.
+ */
+function isCompetitionEnded(competition: Competition): boolean {
+  return competition.status === "ended";
+}
+
+/**
+ * Returns true when the competition is accepting predictions.
+ * @param competition - Competition metadata.
+ */
+function isCompetitionActive(competition: Competition): boolean {
+  return competition.status === "active";
+}
+
+/**
  * Executes a single iteration across all games matching a label for logging.
  * @param rules - Competition rules metadata.
  * @param label - Tag used in log statements (e.g., "initial").
+ * @returns "stop" when the competition has ended, otherwise "continue".
  */
-async function runCycle(rules: CompetitionRules, label: string): Promise<void> {
+async function runCycle(
+  rules: CompetitionRules,
+  label: string,
+): Promise<CycleResult> {
+  let competition: Competition;
+  try {
+    competition = await getCompetitionInfo(config.competitionId);
+  } catch (error) {
+    logger.error({ error }, "Failed to load competition info");
+    return "continue"; // keep polling in case the API recovers
+  }
+
+  if (isCompetitionEnded(competition)) {
+    logger.info(
+      { competitionId: competition.id, status: competition.status },
+      "Competition ended, stopping agent",
+    );
+    return "stop";
+  }
+
+  if (!isCompetitionActive(competition)) {
+    logger.info(
+      { competitionId: competition.id, status: competition.status },
+      "Competition not yet active, waiting",
+    );
+    return "continue";
+  }
+
   let games: Game[] = [];
   try {
     games = await getCompetitionGames(config.competitionId);
   } catch (error) {
     logger.error({ error }, "Failed to load games list");
-    return;
+    return "continue";
   }
 
   logger.info({ label, gameCount: games.length }, "Processing games");
@@ -204,15 +258,21 @@ async function runCycle(rules: CompetitionRules, label: string): Promise<void> {
       logger.error({ error, gameId: game.id }, "Unhandled error for game");
     }
   }
+  return "continue";
 }
 
 /**
  * Continuously repeats cycles with a fixed delay.
+ * Exits gracefully when the competition reaches a terminal state (completed).
  * @param rules - Competition rules metadata.
  */
 async function pollLoop(rules: CompetitionRules): Promise<void> {
   while (true) {
-    await runCycle(rules, "poll");
+    const result = await runCycle(rules, "poll");
+    if (result === "stop") {
+      logger.info("Competition completed, exiting poll loop");
+      break;
+    }
     await sleep(POLL_INTERVAL_MS);
   }
 }

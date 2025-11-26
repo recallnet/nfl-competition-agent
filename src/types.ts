@@ -1,6 +1,25 @@
 /** All supported lifecycle states for an NFL game. */
 export type GameStatus = "scheduled" | "in_progress" | "final";
 
+/** All supported lifecycle states for a competition. */
+export type CompetitionStatus = "pending" | "active" | "ended";
+
+/** Metadata about a competition returned by the info endpoint. */
+export interface Competition {
+  id: string;
+  name: string;
+  status: CompetitionStatus;
+  description?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
+/** Response payload for the competition info endpoint. */
+export interface CompetitionInfoResponse {
+  success: boolean;
+  competition: Competition;
+}
+
 export interface CompetitionRules {
   predictionType: string;
   scoringMethod: string;

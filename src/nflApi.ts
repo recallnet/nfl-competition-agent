@@ -1,6 +1,8 @@
 import { getJson, postJson } from "./httpClient.js";
 import { logger } from "./logger.js";
 import {
+  Competition,
+  CompetitionInfoResponse,
   CompetitionRules,
   CompetitionRulesResponse,
   CreatePredictionRequest,
@@ -23,6 +25,21 @@ function ensureSuccess<T extends { success: boolean }>(
     throw new Error(errorMessage);
   }
   return response;
+}
+
+/**
+ * Fetches metadata about a competition including its current status.
+ * @param competitionId - Unique identifier of the competition.
+ * @returns The competition object.
+ */
+export async function getCompetitionInfo(
+  competitionId: string,
+): Promise<Competition> {
+  const response = ensureSuccess(
+    await getJson<CompetitionInfoResponse>(`/competitions/${competitionId}`),
+    "Competition info payload missing expected data object",
+  );
+  return response.competition;
 }
 
 /**
