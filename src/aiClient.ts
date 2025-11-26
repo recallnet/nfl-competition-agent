@@ -4,13 +4,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 import { config } from "./config.js";
-import {
-  CompetitionRules,
-  CompetitionRulesResponse,
-  Game,
-  Play,
-  Prediction,
-} from "./types.js";
+import { logger } from "./logger.js";
+import { CompetitionRules, Game, Play, Prediction } from "./types.js";
 
 /** Model identifier used for the AI SDK. */
 const modelName = process.env.AI_MODEL || "gpt-4o-mini";
@@ -150,7 +145,7 @@ export async function callPredictionModel(
       reason: parsed.reason,
     };
   } catch (error) {
-    console.warn("AI call failed", error);
+    logger.warn({ error }, "AI call failed");
     if (error instanceof Error) {
       throw error;
     }

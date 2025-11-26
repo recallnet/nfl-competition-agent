@@ -13,14 +13,19 @@ Small TypeScript agent that polls the Recall NFL competition API, gathers live c
 Create `.env` with the following variables (values shown are examples):
 
 ```
+# AI configuration
 AI_GATEWAY_API_KEY=sk-***
 AI_GATEWAY_BASE_URL=https://ai-gateway.vercel.sh/v1 # optional override
 AI_MODEL=openai/gpt-4o-mini # optional override
 
+# Recall API
 RECALL_AGENT_API_KEY=your_recall_agent_api_key
 RECALL_BASE_URL=https://api.competitions.recall.network/api # http://localhost:3000/api for local development
 COMPETITION_ID=your_competition_id # or pass via --competition-id
 AGENT_ID=your_agent_id # optional label for GET /predictions filtering
+
+# General
+LOG_LEVEL=info # pino log level (trace|debug|info|warn|error|fatal)
 ```
 
 ## Install & Run
@@ -46,4 +51,15 @@ pnpm start -- --competition-id your_competition_id
 - The agent re-checks active games every 5 minutes and automatically skips final games.
 - Prediction updates are only posted when `shouldUpdatePrediction` deems the delta meaningful.
 - Recent play-by-play data is fetched for in-progress games (limit 50, latest first) to feed the prompt.
+- Logging uses [Pino](https://github.com/pinojs/pino); adjust `LOG_LEVEL` (e.g., `debug`) for more verbose output and optionally pipe to `pino-pretty`.
 - AI failures or HTTP errors are logged and skipped so the loop can continue running.
+
+## Logging locally
+
+Pipe the agent output through `pino-pretty` for easier reading:
+
+```
+pnpm dev -- --competition-id your_competition_id | pnpm exec pino-pretty
+```
+
+Set `LOG_LEVEL=debug` (or another level) to control verbosity.

@@ -14,6 +14,8 @@ export interface Config {
   baseUrl: string;
   /** Target competition identifier for predictions. */
   competitionId: string;
+  /** Minimum log level forwarded to Pino. */
+  logLevel: string;
 }
 
 /**
@@ -71,12 +73,15 @@ function loadConfig(): Config {
     );
   }
 
+  const logLevel = process.env.LOG_LEVEL?.toLowerCase() || "info";
+
   return {
     aiApiKey,
     aiGatewayBaseUrl,
     recallApiKey,
     baseUrl,
     competitionId,
+    logLevel,
   };
 }
 

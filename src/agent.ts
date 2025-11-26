@@ -5,6 +5,7 @@ import {
 } from "./agentLogic.js";
 import { PredictionPayload, callPredictionModel } from "./aiClient.js";
 import { config } from "./config.js";
+import { logger } from "./logger.js";
 import {
   getCompetitionGames,
   getCompetitionRules,
@@ -13,12 +14,7 @@ import {
   getGamePredictions,
   postGamePrediction,
 } from "./nflApi.js";
-import {
-  CompetitionRules,
-  CompetitionRulesResponse,
-  Game,
-  Prediction,
-} from "./types.js";
+import { CompetitionRules, Game, Prediction } from "./types.js";
 
 /**
  * Interval between polling cycles in milliseconds.
@@ -56,7 +52,7 @@ async function fetchLatestPrediction(
     );
     return predictions[0];
   } catch (error) {
-    console.error(`Failed to fetch predictions for ${gameId}:`, error);
+    logger.error({ error, gameId, competitionId }, "Failed to fetch latest prediction");
     return undefined;
   }
 }
@@ -79,7 +75,7 @@ async function buildPrediction(
           limit: 20,
           sort: "-createdAt",
         }).catch((error) => {
-          console.warn(`Unable to load plays for ${game.id}:`, error);
+          logger.warn({ error, gameId: game.id }, "Unable to load recent plays");
           return undefined;
         })
       : undefined;
@@ -110,7 +106,7 @@ async function handleGame(
   baseGame: Game,
 ): Promise<void> {
   if (hasGameEnded(baseGame)) {
-    console.log(`Skipping final game ${baseGame.id}`);
+    logger.info({ gameId: baseGame.id }, "Skipping final game");
     return;
   }
 
@@ -118,13 +114,14 @@ async function handleGame(
   try {
     detailedGame = await getGameInfo(config.competitionId, baseGame.id);
   } catch (error) {
-    console.error(`Failed to load game info for ${baseGame.id}:`, error);
+    logger.error({ error, gameId: baseGame.id }, "Failed to load game info");
     return;
   }
 
   if (!isGameActiveForPolling(detailedGame)) {
-    console.log(
-      `Game ${detailedGame.id} not active for polling (status=${detailedGame.status})`,
+    logger.debug(
+      { gameId: detailedGame.id, status: detailedGame.status },
+      "Game not active for polling",
     );
     return;
   }
@@ -137,9 +134,9 @@ async function handleGame(
   try {
     aiPrediction = await buildPrediction(rules, detailedGame, latestPrediction);
   } catch (error) {
-    console.error(
-      `Skipping prediction for ${detailedGame.id} due to model error:`,
-      error,
+    logger.error(
+      { error, gameId: detailedGame.id },
+      "Skipping prediction due to model error",
     );
     return;
   }
@@ -154,7 +151,7 @@ async function handleGame(
   });
 
   if (!shouldUpdate) {
-    console.log(`No update needed for game ${detailedGame.id}`);
+    logger.debug({ gameId: detailedGame.id }, "No update needed");
     return;
   }
 
@@ -167,18 +164,20 @@ async function handleGame(
     );
     const submittedAt = prediction?.createdAt ?? now;
     if (prediction?.id) {
-      console.log(
-        `Submitted prediction ${prediction.id} for game ${detailedGame.id} at ${submittedAt}`,
+      logger.info(
+        { predictionId: prediction.id, gameId: detailedGame.id, submittedAt },
+        "Submitted prediction",
       );
     } else {
-      console.log(
-        `Submitted prediction for game ${detailedGame.id} at ${submittedAt}`,
+      logger.info(
+        { gameId: detailedGame.id, submittedAt },
+        "Submitted prediction",
       );
     }
   } catch (error) {
-    console.error(
-      `Failed to submit prediction for ${detailedGame.id} at ${now}:`,
-      error,
+    logger.error(
+      { error, gameId: detailedGame.id, submittedAt: now },
+      "Failed to submit prediction",
     );
   }
 }
@@ -193,16 +192,16 @@ async function runCycle(rules: CompetitionRules, label: string): Promise<void> {
   try {
     games = await getCompetitionGames(config.competitionId);
   } catch (error) {
-    console.error("Failed to load games list:", error);
+    logger.error({ error }, "Failed to load games list");
     return;
   }
 
-  console.log(`[${label}] Processing ${games.length} games`);
+  logger.info({ label, gameCount: games.length }, "Processing games");
   for (const game of games) {
     try {
       await handleGame(rules, game);
     } catch (error) {
-      console.error(`Unhandled error for game ${game.id}:`, error);
+      logger.error({ error, gameId: game.id }, "Unhandled error for game");
     }
   }
 }
@@ -220,14 +219,15 @@ async function pollLoop(rules: CompetitionRules): Promise<void> {
 
 /** Program entry point that initializes rules and begins polling. */
 async function main(): Promise<void> {
-  console.log(
-    `Starting NFL prediction agent for competition ${config.competitionId}`,
+  logger.info(
+    { competitionId: config.competitionId },
+    "Starting NFL prediction agent",
   );
   let rules: CompetitionRules;
   try {
     rules = await getCompetitionRules(config.competitionId);
   } catch (error) {
-    console.error("Unable to load competition rules, exiting:", error);
+    logger.error({ error }, "Unable to load competition rules");
     return;
   }
 
@@ -236,6 +236,6 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  console.error("Agent crashed:", error);
+  logger.fatal({ error }, "Agent crashed");
   process.exit(1);
 });

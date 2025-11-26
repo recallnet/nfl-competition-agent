@@ -1,4 +1,5 @@
 import { getJson, postJson } from "./httpClient.js";
+import { logger } from "./logger.js";
 import {
   CompetitionRules,
   CompetitionRulesResponse,
@@ -13,6 +14,17 @@ import {
   Prediction,
 } from "./types.js";
 
+function ensureSuccess<T extends { success: boolean }>(
+  response: T | undefined,
+  errorMessage: string,
+): T {
+  if (!response?.success) {
+    logger.error({ response }, errorMessage);
+    throw new Error(errorMessage);
+  }
+  return response;
+}
+
 /**
  * Fetches the competition rules document for scoring and timing guidance.
  * @param competitionId - Unique identifier of the competition.
@@ -21,12 +33,12 @@ import {
 export async function getCompetitionRules(
   competitionId: string,
 ): Promise<CompetitionRules> {
-  const response = await getJson<CompetitionRulesResponse>(
-    `/nfl/competitions/${competitionId}/rules`,
+  const response = ensureSuccess(
+    await getJson<CompetitionRulesResponse>(
+      `/nfl/competitions/${competitionId}/rules`,
+    ),
+    "Competition rules payload missing expected data object",
   );
-  if (!response?.success) {
-    throw new Error("Competition rules payload missing expected data object");
-  }
   return response.data;
 }
 
@@ -38,12 +50,10 @@ export async function getCompetitionRules(
 export async function getCompetitionGames(
   competitionId: string,
 ): Promise<Game[]> {
-  const response = await getJson<GamesResponse>(
-    `/nfl/competitions/${competitionId}/games`,
+  const response = ensureSuccess(
+    await getJson<GamesResponse>(`/nfl/competitions/${competitionId}/games`),
+    "Games payload missing expected data object",
   );
-  if (!response?.success) {
-    throw new Error("Games payload missing expected data object");
-  }
   return response.data.games;
 }
 
@@ -57,12 +67,12 @@ export async function getGameInfo(
   competitionId: string,
   gameId: string,
 ): Promise<Game> {
-  const response = await getJson<GameInfoResponse>(
-    `/nfl/competitions/${competitionId}/games/${gameId}`,
+  const response = ensureSuccess(
+    await getJson<GameInfoResponse>(
+      `/nfl/competitions/${competitionId}/games/${gameId}`,
+    ),
+    "Game info payload missing expected data object",
   );
-  if (!response?.success) {
-    throw new Error("Game info payload missing expected data object");
-  }
   return response.data.game;
 }
 
@@ -92,10 +102,10 @@ export async function getGamePlays(
   const path = query
     ? `/nfl/competitions/${competitionId}/games/${gameId}/plays?${query}`
     : `/nfl/competitions/${competitionId}/games/${gameId}/plays`;
-  const response = await getJson<PlaysResponse>(path);
-  if (!response?.success) {
-    throw new Error("Plays payload missing expected data object");
-  }
+  const response = ensureSuccess(
+    await getJson<PlaysResponse>(path),
+    "Plays payload missing expected data object",
+  );
   return response.data;
 }
 
@@ -117,10 +127,10 @@ export async function getGamePredictions(
   const path = query
     ? `/nfl/competitions/${competitionId}/games/${gameId}/predictions?${query}`
     : `/nfl/competitions/${competitionId}/games/${gameId}/predictions`;
-  const response = await getJson<GetPredictionsResponse>(path);
-  if (!response?.success) {
-    throw new Error("Predictions payload missing expected data object");
-  }
+  const response = ensureSuccess(
+    await getJson<GetPredictionsResponse>(path),
+    "Predictions payload missing expected data object",
+  );
   return response.data.predictions;
 }
 
@@ -136,11 +146,15 @@ export async function postGamePrediction(
   gameId: string,
   body: CreatePredictionRequest,
 ): Promise<Prediction> {
-  const response = await postJson<CreatePredictionResponse>(
-    `/nfl/competitions/${competitionId}/games/${gameId}/predictions`,
-    body,
+  const response = ensureSuccess(
+    await postJson<CreatePredictionResponse>(
+      `/nfl/competitions/${competitionId}/games/${gameId}/predictions`,
+      body,
+    ),
+    "Prediction payload missing expected data object",
   );
-  if (!response?.success || !response.data) {
+  if (!response.data) {
+    logger.error({ response }, "Prediction response missing data");
     throw new Error("Prediction payload missing expected data object");
   }
   return response.data;

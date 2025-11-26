@@ -116,6 +116,7 @@ export interface Pagination {
 export interface Plays {
   metadata: GameStateSnapshot | null;
   plays: Play[];
+  play?: Play | null;
   pagination: Pagination;
 }
 

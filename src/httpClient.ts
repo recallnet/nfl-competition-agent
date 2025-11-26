@@ -1,4 +1,5 @@
 import { config } from "./config.js";
+import { logger } from "./logger.js";
 
 /** Options supported by the shared HTTP helper. */
 interface RequestOptions extends RequestInit {
@@ -48,11 +49,25 @@ async function request<T>(path: string, init: RequestOptions = {}): Promise<T> {
   if (!response.ok) {
     const errorMessage =
       typeof payload === "string" ? payload : JSON.stringify(payload);
+    logger.error(
+      {
+        url,
+        method: init.method ?? "GET",
+        status: response.status,
+        statusText: response.statusText,
+        body: payload,
+      },
+      "HTTP request failed",
+    );
     throw new Error(
       `HTTP ${response.status} ${response.statusText}: ${errorMessage}`,
     );
   }
 
+  logger.debug(
+    { url, method: init.method ?? "GET", status: response.status },
+    "HTTP request succeeded",
+  );
   return payload as T;
 }
 
