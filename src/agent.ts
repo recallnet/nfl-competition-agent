@@ -295,7 +295,6 @@ async function main(): Promise<void> {
     return;
   }
 
-  await runCycle(rules, "initial");
   await pollLoop(rules);
 }
 
