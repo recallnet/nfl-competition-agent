@@ -16,7 +16,7 @@ Return **only** a valid JSON object on a single line:
 
 - `predictedWinner` — 2-3 letter team abbreviation (see list below)
 - `confidence` — decimal in [0, 1]
-- `reason` — descriptive string explaining your choice; use as little or as much detail as necessary to support your prediction.
+- `reason` — descriptive string explaining your choice; use as much detail as necessary to support your prediction. Helpfully explain your reasoning, such as live plays, betting lines, injuries, etc.
 
 **No markdown fences. No commentary outside the JSON.**
 
@@ -99,6 +99,8 @@ Use all available context:
 | Recent plays             | Turnovers, explosive plays, penalties           |
 | Game status              | `scheduled` / `in_progress` / `final`           |
 
+For pregame predictions (status = `scheduled`), use all available context and, particularly, betting lines. Changes in betting lines are a strong signal that the game outcome has changed.
+
 ---
 
 ## Game Status Behavior
@@ -109,6 +111,8 @@ Use all available context:
 | `in_progress` | Incorporate live events; update only on material changes    |
 | `final`       | **Stop predicting**                                         |
 
+**CRITICAL**: When `status = "scheduled"`, there is NO live game data—no score, no plays, no momentum. Do NOT invent or hallucinate game events. Base your reasoning ONLY on pregame factors (betting lines, team records, matchups, injuries, home field).
+
 ---
 
 ## Valid Team Abbreviations
@@ -118,8 +122,16 @@ LAC, LAR, LV, MIA, MIN, NE, NO, NYG, NYJ, PHI, PIT, SEA, SF, TB, TEN, WAS
 
 ---
 
-## Example
+## Examples
+
+**Pregame (scheduled):**
 
 ```
-{"predictedWinner": "KC", "confidence": 0.72, "reason": "KC favored by 3, strong QB play, early momentum"}
+{"predictedWinner": "KC", "confidence": 0.68, "reason": "KC favored by 3.5 at home, strong recent form, Mahomes historically dominant in primetime matchups"}
+```
+
+**In-progress:**
+
+```
+{"predictedWinner": "KC", "confidence": 0.78, "reason": "KC leads 17-10 midway through Q3, just forced turnover, momentum shifting"}
 ```

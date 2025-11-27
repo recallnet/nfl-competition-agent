@@ -1,6 +1,7 @@
 import {
   BettingLines,
   hasGameEnded,
+  haveLinesChanged,
   isGameActiveForPolling,
   shouldUpdatePrediction,
 } from "./agentLogic.js";
@@ -91,12 +92,14 @@ async function fetchLatestPrediction(
  * @param rules - Competition rules to guide the model.
  * @param game - Game metadata.
  * @param latestPrediction - Optional latest prediction to inform updates.
+ * @param previousLines - Optional previous betting lines when a line change triggered this call.
  * @returns Structured AI output ready for submission.
  */
 async function buildPrediction(
   rules: CompetitionRules,
   game: Game,
   latestPrediction?: Prediction,
+  previousLines?: BettingLines,
 ): Promise<{ predictedWinner: string; confidence: number; reason: string }> {
   const playsData =
     game.status === "in_progress"
@@ -125,6 +128,7 @@ async function buildPrediction(
           reason: latestPrediction.reason,
         }
       : undefined,
+    previousLines,
   });
 }
 
@@ -165,10 +169,16 @@ async function handleGame(
 
   const currentLines = extractBettingLines(detailedGame);
   const previousLines = previousLinesCache.get(detailedGame.id);
+  const linesChanged = haveLinesChanged(currentLines, previousLines);
 
   let aiPrediction: PredictionPayload;
   try {
-    aiPrediction = await buildPrediction(rules, detailedGame, latestPrediction);
+    aiPrediction = await buildPrediction(
+      rules,
+      detailedGame,
+      latestPrediction,
+      linesChanged ? previousLines : undefined,
+    );
   } catch (error) {
     logger.error(
       { error, gameId: detailedGame.id },

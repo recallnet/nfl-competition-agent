@@ -37,7 +37,7 @@ interface ShouldUpdatePredictionParams {
  * @param previous - Previous betting lines.
  * @returns True when at least one line differs.
  */
-function haveLinesChanged(
+export function haveLinesChanged(
   current?: BettingLines,
   previous?: BettingLines,
 ): boolean {

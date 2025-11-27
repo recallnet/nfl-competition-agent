@@ -3,6 +3,7 @@ import { generateText } from "ai";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { BettingLines } from "./agentLogic.js";
 import { config } from "./config.js";
 import { logger } from "./logger.js";
 import { CompetitionRules, Game, Play, Prediction } from "./types.js";
@@ -42,7 +43,7 @@ export interface PredictionPayload {
 /**
  * Context objects aggregated for prompt generation.
  */
-interface PromptContext {
+export interface PromptContext {
   rules: CompetitionRules;
   game: Game;
   plays?: Play[];
@@ -50,6 +51,17 @@ interface PromptContext {
     Prediction,
     "predictedWinner" | "confidence" | "createdAt" | "reason"
   >;
+  /** Previous betting lines when a line change triggered this prediction. */
+  previousLines?: BettingLines;
+}
+
+/**
+ * Formats a betting line value for display.
+ * @param value - The line value (may be null/undefined).
+ * @returns Formatted string or "N/A".
+ */
+function formatLine(value: number | null | undefined): string {
+  return value != null ? String(value) : "N/A";
 }
 
 /**
@@ -58,7 +70,13 @@ interface PromptContext {
  * @returns A multiline string prompt.
  */
 export function generateGamePredictionPrompt(context: PromptContext): string {
-  const { rules, game, plays = [], previousPrediction } = context;
+  const {
+    rules,
+    game,
+    plays = [],
+    previousPrediction,
+    previousLines,
+  } = context;
   const lines: string[] = [basePrompt];
   const formulaSummary = [
     rules.scoringFormula.description,
@@ -96,10 +114,26 @@ export function generateGamePredictionPrompt(context: PromptContext): string {
     `Game info: ${game.awayTeam} at ${game.homeTeam}. Season ${game.season}, week ${game.week}.`,
   );
   lines.push(
-    `Status=${game.status}, startTime=${game.startTime}, spread=${
-      game.spread ?? "N/A"
-    }, overUnder=${game.overUnder ?? "N/A"}, venue=${game.venue ?? "unknown"}.`,
+    `Status=${game.status}, startTime=${game.startTime}, venue=${game.venue ?? "unknown"}.`,
   );
+
+  // For scheduled games, explicitly state there's no live data.
+  if (game.status === "scheduled") {
+    lines.push(
+      "IMPORTANT: This game has NOT started yet. There is NO score, NO plays, NO live data. Base your prediction ONLY on pregame factors: betting lines, team records, matchup history, and general knowledge.",
+    );
+  }
+
+  // Include current and previous betting lines.
+  lines.push(
+    `Current betting lines: spread=${formatLine(game.spread)}, overUnder=${formatLine(game.overUnder)}, homeMoneyLine=${formatLine(game.homeTeamMoneyLine)}, awayMoneyLine=${formatLine(game.awayTeamMoneyLine)}.`,
+  );
+  if (previousLines) {
+    lines.push("Note: betting line changes detected since last prediction.");
+    lines.push(
+      `Previous lines: spread=${formatLine(previousLines.spread)}, overUnder=${formatLine(previousLines.overUnder)}, homeMoneyLine=${formatLine(previousLines.homeTeamMoneyLine)}, awayMoneyLine=${formatLine(previousLines.awayTeamMoneyLine)}.`,
+    );
+  }
 
   if (previousPrediction) {
     lines.push(
