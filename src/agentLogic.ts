@@ -6,6 +6,16 @@ import { Game, GameStatus, Prediction } from "./types.js";
 const EPSILON = 0.0001;
 
 /**
+ * Snapshot of betting lines for change detection.
+ */
+export interface BettingLines {
+  spread?: number | null;
+  overUnder?: number | null;
+  homeTeamMoneyLine?: number | null;
+  awayTeamMoneyLine?: number | null;
+}
+
+/**
  * Shape of the data used when determining whether to submit a new prediction.
  */
 interface ShouldUpdatePredictionParams {
@@ -15,6 +25,31 @@ interface ShouldUpdatePredictionParams {
     predictedWinner: string;
     confidence: number;
   };
+  /** Current betting lines from the latest game info fetch. */
+  currentLines?: BettingLines;
+  /** Betting lines from the previous poll cycle (if any). */
+  previousLines?: BettingLines;
+}
+
+/**
+ * Checks whether any betting line value has changed between two snapshots.
+ * @param current - Current betting lines.
+ * @param previous - Previous betting lines.
+ * @returns True when at least one line differs.
+ */
+function haveLinesChanged(
+  current?: BettingLines,
+  previous?: BettingLines,
+): boolean {
+  if (!current || !previous) {
+    return false;
+  }
+  return (
+    current.spread !== previous.spread ||
+    current.overUnder !== previous.overUnder ||
+    current.homeTeamMoneyLine !== previous.homeTeamMoneyLine ||
+    current.awayTeamMoneyLine !== previous.awayTeamMoneyLine
+  );
 }
 
 /**
@@ -27,6 +62,8 @@ export function shouldUpdatePrediction({
   gameStatus,
   latestPrediction,
   newPrediction,
+  currentLines,
+  previousLines,
 }: ShouldUpdatePredictionParams): { shouldUpdate: boolean; reason?: string } {
   if (gameStatus === "final") {
     return {
@@ -40,12 +77,21 @@ export function shouldUpdatePrediction({
       reason: "No previous prediction found; submitting new prediction",
     };
   }
+
+  // Allow a new prediction if betting lines moved since last cycle.
+  if (haveLinesChanged(currentLines, previousLines)) {
+    return {
+      shouldUpdate: true,
+      reason: "Betting lines changed; submitting updated prediction",
+    };
+  }
+
   // Note: we want agents to submit a single prediction for scheduled games because there's no new
-  // context after that happens—until the game starts.
+  // context after that happens—until the game starts (or lines change).
   if (gameStatus === "scheduled") {
     return {
       shouldUpdate: false,
-      reason: "Scheduled game; waiting for game start",
+      reason: "Scheduled game; waiting for game start or line movement",
     };
   }
   const sameWinner =

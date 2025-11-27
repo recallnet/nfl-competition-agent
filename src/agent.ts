@@ -1,4 +1,5 @@
 import {
+  BettingLines,
   hasGameEnded,
   isGameActiveForPolling,
   shouldUpdatePrediction,
@@ -31,6 +32,25 @@ const AGENT_ID = process.env.AGENT_ID;
  * Result of a single poll cycle indicating whether to continue and whether work was done.
  */
 type CycleResult = "continue" | "stop";
+
+/**
+ * In-memory cache of betting lines from the previous poll cycle, keyed by game ID.
+ */
+const previousLinesCache = new Map<string, BettingLines>();
+
+/**
+ * Extracts the betting lines from a game object.
+ * @param game - Game to extract lines from.
+ * @returns Betting lines snapshot.
+ */
+function extractBettingLines(game: Game): BettingLines {
+  return {
+    spread: game.spread,
+    overUnder: game.overUnder,
+    homeTeamMoneyLine: game.homeTeamMoneyLine,
+    awayTeamMoneyLine: game.awayTeamMoneyLine,
+  };
+}
 
 /**
  * Promise-based sleep helper used by the polling loop.
@@ -142,6 +162,10 @@ async function handleGame(
     config.competitionId,
     detailedGame.id,
   );
+
+  const currentLines = extractBettingLines(detailedGame);
+  const previousLines = previousLinesCache.get(detailedGame.id);
+
   let aiPrediction: PredictionPayload;
   try {
     aiPrediction = await buildPrediction(rules, detailedGame, latestPrediction);
@@ -150,6 +174,8 @@ async function handleGame(
       { error, gameId: detailedGame.id },
       "Skipping prediction due to model error",
     );
+    // Still update the cache so we don't miss line changes next cycle.
+    previousLinesCache.set(detailedGame.id, currentLines);
     return;
   }
 
@@ -160,7 +186,12 @@ async function handleGame(
       predictedWinner: aiPrediction.predictedWinner,
       confidence: aiPrediction.confidence,
     },
+    currentLines,
+    previousLines,
   });
+
+  // Update the cache for the next cycle.
+  previousLinesCache.set(detailedGame.id, currentLines);
 
   if (!shouldUpdate) {
     logger.debug(
